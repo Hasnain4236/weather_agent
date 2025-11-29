@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather Buddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="background-blur"></div>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <h1>Weather Buddy</h1>
+        </div>
+        <div class="signature" aria-label="Crafted by Hasnain">Hasnain</div>
+      </header>
+
+      <section class="panel">
+        <form id="weather-form" class="form" autocomplete="off">
+          <label for="location" class="sr-only">Location</label>
+          <input id="location" name="location" placeholder="Type any city, region, or landmark" />
+          <button type="submit">Check weather</button>
+        </form>
+        <p id="status" class="status" role="status"></p>
+
+        <article id="result" class="result result--hidden" aria-live="polite">
+          <div class="result__header">
+            <div>
+              <p class="result__eyebrow" id="result-query"></p>
+              <h2 id="result-location"></h2>
+              <p class="result__condition" id="result-condition"></p>
+            </div>
+            <div class="result__temp-group">
+              <p class="result__temp" id="result-temp"></p>
+              <p class="result__feels" id="result-feels"></p>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <span>Humidity</span>
+              <strong id="metric-humidity"></strong>
+            </div>
+            <div class="metric">
+              <span>Wind</span>
+              <strong id="metric-wind"></strong>
+            </div>
+            <div class="metric">
+              <span>Precipitation</span>
+              <strong id="metric-precip"></strong>
+            </div>
+            <div class="metric">
+              <span>Timezone</span>
+              <strong id="metric-timezone"></strong>
+            </div>
+          </div>
+          <footer class="result__footer">Source: open-meteo.com</footer>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("weather-form");
+      const locationInput = document.getElementById("location");
+      const statusEl = document.getElementById("status");
+      const resultCard = document.getElementById("result");
+
+      const fields = {
+        query: document.getElementById("result-query"),
+        location: document.getElementById("result-location"),
+        condition: document.getElementById("result-condition"),
+        temp: document.getElementById("result-temp"),
+        feels: document.getElementById("result-feels"),
+        humidity: document.getElementById("metric-humidity"),
+        wind: document.getElementById("metric-wind"),
+        precip: document.getElementById("metric-precip"),
+        timezone: document.getElementById("metric-timezone"),
+      };
+
+      async function fetchWeather(location) {
+        const response = await fetch("/api/weather", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ location }),
+        });
+        return response.json().then((data) => ({ status: response.status, data }));
+      }
+
+      function showStatus(message, variant = "idle") {
+        statusEl.textContent = message;
+        statusEl.dataset.variant = variant;
+      }
+
+      function renderResult(summary) {
+        fields.query.textContent = `query: ${summary.query}`;
+        fields.location.textContent = summary.location;
+        fields.condition.textContent = summary.condition;
+        fields.temp.textContent = summary.temperature;
+        fields.feels.textContent = `feels like ${summary.feels_like}`;
+        fields.humidity.textContent = summary.humidity;
+        fields.wind.textContent = `${summary.wind_speed} @ ${summary.wind_direction}`;
+        fields.precip.textContent = summary.precipitation;
+        fields.timezone.textContent = summary.timezone;
+        resultCard.classList.remove("result--hidden");
+        resultCard.classList.add("result--visible");
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const location = locationInput.value.trim();
+        if (!location) {
+          showStatus("Please enter a location.", "error");
+          resultCard.classList.add("result--hidden");
+          return;
+        }
+
+        showStatus("Fetching the latest data…", "loading");
+        resultCard.classList.add("result--hidden");
+        try {
+          const { status, data } = await fetchWeather(location);
+          if (status >= 400 || data.error) {
+            const message = data.error || "Unable to fetch weather right now.";
+            showStatus(message, "error");
+            return;
+          }
+
+          renderResult(data);
+          showStatus("Done", "success");
+        } catch (error) {
+          console.error(error);
+          showStatus("Network error. Please try again.", "error");
+        }
+      });
+    </script>
+  </body>
+</html>
