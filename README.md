@@ -1,6 +1,4 @@
-# Weather Buddy (Open-Meteo Edition)
-
-A gorgeous, lighting-fast weather experience powered **entirely** by the [Open-Meteo](https://open-meteo.com/) APIs. Type any city, airport, or landmark into the new GUI and get instant readings for temperature, feels-like, humidity, wind, precipitation, and timezone—no Ollama, no LLM latency, just clean data with beautiful typography.
+# Weatheragentic
 
 ![Screenshot of the Weather Buddy UI](weather_agent.png)
 
